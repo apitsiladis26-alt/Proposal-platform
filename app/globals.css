@@ -3,24 +3,33 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* Human Telemetrics brand: dark charcoal + teal accent.
+     Used across the dashboard/editor/settings ("Apple-esque") chrome.
+     The public /p/[slug] proposal page intentionally uses its own
+     PandaDoc-derived palette instead — see components/proposal/*. */
+  --accent: #0d9488; /* teal-600 */
+  --accent-hover: #0f766e; /* teal-700 */
+  --accent-soft: #f0fdfa; /* teal-50 */
+  --charcoal: #3d3d3d;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-charcoal: var(--charcoal);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* No dark theme built yet — the dashboard/editor is one explicit light
+   design. Letting text color follow the OS dark-mode preference while
+   card/input backgrounds stay hardcoded light made text nearly invisible. */
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
 }
