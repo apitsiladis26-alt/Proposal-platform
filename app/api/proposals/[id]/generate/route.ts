@@ -45,7 +45,7 @@ export async function POST(
     return NextResponse.json({ error: "Failed to start regeneration" }, { status: 500 });
   }
 
-  triggerGeneration({
+  await triggerGeneration({
     requestUrl: request.url,
     proposalId: id,
     companyName: profile?.company_name ?? "",

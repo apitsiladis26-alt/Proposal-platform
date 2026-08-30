@@ -55,7 +55,7 @@ export async function POST(request: Request) {
     );
   }
 
-  triggerGeneration({
+  await triggerGeneration({
     requestUrl: request.url,
     proposalId: proposal.id,
     companyName: profile?.company_name ?? "",
