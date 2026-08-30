@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { pollUntilGenerated } from "@/lib/poll-generation";
 
 export function NewProposalForm() {
   const router = useRouter();
@@ -39,17 +40,25 @@ export function NewProposalForm() {
         body: JSON.stringify(payload),
       });
       const data = await res.json();
-      clearInterval(interval);
 
       if (!res.ok) {
+        clearInterval(interval);
         setError(data.error ?? "Something went wrong");
         setPending(false);
         setProgress(0);
         return;
       }
 
+      const proposal = await pollUntilGenerated(data.proposal.id);
+      clearInterval(interval);
+
+      if (proposal.generation_status === "failed") {
+        router.push(`/dashboard/${proposal.id}`);
+        return;
+      }
+
       setProgress(100);
-      router.push(`/dashboard/${data.proposal.id}`);
+      router.push(`/dashboard/${proposal.id}`);
     } catch {
       clearInterval(interval);
       setError("Network error — please try again");

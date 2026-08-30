@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { pollUntilGenerated } from "@/lib/poll-generation";
 import type {
   AiContent,
   Proposal,
@@ -36,12 +37,30 @@ export function ProposalEditor({
     },
   );
   const [brief, setBrief] = useState(initialProposal.brief);
+  const [generationStatus, setGenerationStatus] = useState(initialProposal.generation_status);
   // Land on the styled preview first — that's "the proposal," not a form.
   const [view, setView] = useState<"edit" | "preview">("preview");
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
+
+  // Defensive: normally generation finishes (or is left "failed") before the
+  // create flow navigates here, but if someone lands mid-generation (refresh,
+  // second tab), pick the poll back up.
+  useEffect(() => {
+    if (generationStatus !== "pending") return;
+    let cancelled = false;
+    pollUntilGenerated(initialProposal.id).then((updated) => {
+      if (cancelled) return;
+      setProposal(updated);
+      if (updated.ai_content) setContent(updated.ai_content);
+      setGenerationStatus(updated.generation_status);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [generationStatus, initialProposal.id]);
 
   async function copyPublicLink(path: string) {
     const url = `${window.location.origin}${path}`;
@@ -105,13 +124,23 @@ export function ProposalEditor({
       body: JSON.stringify({ brief }),
     });
     const data = await res.json();
-    setBusy(null);
     if (!res.ok) {
+      setBusy(null);
       setError(data.error ?? "Regeneration failed");
       return;
     }
     setProposal(data.proposal);
-    setContent(data.proposal.ai_content);
+    setGenerationStatus("pending");
+
+    const updated = await pollUntilGenerated(proposal.id);
+    setBusy(null);
+    setProposal(updated);
+    setGenerationStatus(updated.generation_status);
+    if (updated.generation_status === "failed") {
+      setError(updated.generation_error ?? "Regeneration failed");
+      return;
+    }
+    if (updated.ai_content) setContent(updated.ai_content);
   }
 
   async function archive() {
@@ -190,6 +219,18 @@ export function ProposalEditor({
 
       {error && (
         <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>
+      )}
+
+      {generationStatus === "pending" && (
+        <p className="mb-4 rounded-lg bg-accent-soft px-3 py-2 text-sm text-accent-hover">
+          Claude is drafting the proposal — this page will update automatically.
+        </p>
+      )}
+      {generationStatus === "failed" && !error && (
+        <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
+          AI generation failed{proposal.generation_error ? `: ${proposal.generation_error}` : ""}. Use
+          &ldquo;Regenerate with AI&rdquo; below to try again.
+        </p>
       )}
 
       {publicPath && (

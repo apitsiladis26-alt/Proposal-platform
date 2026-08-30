@@ -2,10 +2,8 @@ import { NextResponse } from "next/server";
 import { nanoid } from "nanoid";
 import { getUser } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { generateProposalSections } from "@/lib/anthropic";
+import { triggerGeneration } from "@/lib/trigger-generation";
 import { newProposalInputSchema } from "@/lib/proposal-schema";
-
-export const maxDuration = 60;
 
 export async function POST(request: Request) {
   const user = await getUser();
@@ -31,22 +29,6 @@ export async function POST(request: Request) {
     .limit(1)
     .maybeSingle();
 
-  let aiContent;
-  try {
-    aiContent = await generateProposalSections({
-      companyName: profile?.company_name ?? "",
-      clientName: input.client_name,
-      clientCompany: input.client_company,
-      brief: input.brief,
-    });
-  } catch (err) {
-    console.error("Claude generation failed:", err);
-    return NextResponse.json(
-      { error: "AI generation failed. You can try again from the editor." },
-      { status: 502 },
-    );
-  }
-
   const { data: proposal, error } = await admin
     .from("proposals")
     .insert({
@@ -56,7 +38,8 @@ export async function POST(request: Request) {
       client_phone: input.client_phone || null,
       brief: input.brief,
       price: input.price,
-      ai_content: aiContent,
+      ai_content: null,
+      generation_status: "pending",
       status: "published",
       published_at: new Date().toISOString(),
       slug: nanoid(21),
@@ -71,6 +54,15 @@ export async function POST(request: Request) {
       { status: 500 },
     );
   }
+
+  triggerGeneration({
+    requestUrl: request.url,
+    proposalId: proposal.id,
+    companyName: profile?.company_name ?? "",
+    clientName: input.client_name,
+    clientCompany: input.client_company,
+    brief: input.brief,
+  });
 
   return NextResponse.json({ proposal });
 }

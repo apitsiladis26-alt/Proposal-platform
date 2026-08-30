@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
 import { getUser } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { generateProposalSections } from "@/lib/anthropic";
-
-export const maxDuration = 60;
+import { triggerGeneration } from "@/lib/trigger-generation";
 
 export async function POST(
   request: Request,
@@ -36,29 +34,25 @@ export async function POST(
     .limit(1)
     .maybeSingle();
 
-  let aiContent;
-  try {
-    aiContent = await generateProposalSections({
-      companyName: profile?.company_name ?? "",
-      clientName: proposal.client_name,
-      clientCompany: proposal.client_company ?? undefined,
-      brief,
-    });
-  } catch (err) {
-    console.error("Claude regeneration failed:", err);
-    return NextResponse.json({ error: "AI generation failed" }, { status: 502 });
-  }
-
   const { data: updated, error } = await admin
     .from("proposals")
-    .update({ brief, ai_content: aiContent, updated_at: new Date().toISOString() })
+    .update({ brief, generation_status: "pending", generation_error: null, updated_at: new Date().toISOString() })
     .eq("id", id)
     .select()
     .single();
 
   if (error || !updated) {
-    return NextResponse.json({ error: "Failed to save regenerated content" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to start regeneration" }, { status: 500 });
   }
+
+  triggerGeneration({
+    requestUrl: request.url,
+    proposalId: id,
+    companyName: profile?.company_name ?? "",
+    clientName: proposal.client_name,
+    clientCompany: proposal.client_company ?? undefined,
+    brief,
+  });
 
   return NextResponse.json({ proposal: updated });
 }

@@ -65,6 +65,8 @@ export interface Proposal {
   currency: string;
   status: ProposalStatus;
   ai_content: AiContent | null;
+  generation_status: "pending" | "ready" | "failed";
+  generation_error: string | null;
   created_at: string;
   updated_at: string;
   published_at: string | null;
