@@ -5,6 +5,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { generateProposalSections } from "@/lib/anthropic";
 import { newProposalInputSchema } from "@/lib/proposal-schema";
 
+export const maxDuration = 60;
+
 export async function POST(request: Request) {
   const user = await getUser();
   if (!user) {
