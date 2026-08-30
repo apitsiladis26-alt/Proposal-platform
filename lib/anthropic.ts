@@ -44,7 +44,7 @@ Write the proposal sections for this engagement.`;
     max_tokens: 8000,
     thinking: { type: "adaptive" },
     output_config: {
-      effort: "high",
+      effort: "medium",
       format: zodOutputFormat(aiContentSchema),
     },
     system: SYSTEM_PROMPT,

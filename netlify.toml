@@ -1,8 +1,5 @@
 [build]
   command = "next build"
 
-[functions]
-  timeout = 60
-
 [[plugins]]
   package = "@netlify/plugin-nextjs"
