@@ -288,6 +288,7 @@ export function ProposalEditor({
                   initialStatus={proposal.status}
                   price={proposal.price}
                   currency={proposal.currency}
+                  viewerContext="owner"
                 />
               )
             }

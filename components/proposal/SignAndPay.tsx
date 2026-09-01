@@ -11,11 +11,15 @@ export function SignAndPay({
   initialStatus,
   price,
   currency,
+  viewerContext = "public",
 }: {
   slug: string;
   initialStatus: ProposalStatus;
   price: number;
   currency: string;
+  /** "owner" renders inline in the dashboard report instead of taking over
+   *  the client's full-screen thank-you experience. */
+  viewerContext?: "public" | "owner";
 }) {
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<ProposalStatus>(initialStatus);
@@ -108,6 +112,14 @@ export function SignAndPay({
   }
 
   if (status === "paid") {
+    if (viewerContext === "owner") {
+      return (
+        <p className="inline-flex items-center gap-2 rounded-xl bg-green-50 px-4 py-3 text-sm font-medium text-green-700">
+          ✓ Signed and paid in full
+        </p>
+      );
+    }
+
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-white p-6">
         <SuccessConfetti />
