@@ -44,6 +44,7 @@ export function ProposalEditor({
   const [error, setError] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
+  const [emailStatus, setEmailStatus] = useState<"sending" | "sent" | "failed" | null>(null);
 
   // Defensive: normally generation finishes (or is left "failed") before the
   // create flow navigates here, but if someone lands mid-generation (refresh,
@@ -83,6 +84,13 @@ export function ProposalEditor({
     }
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  }
+
+  async function emailClient() {
+    setEmailStatus("sending");
+    const res = await fetch(`/api/proposals/${proposal.id}/send`, { method: "POST" });
+    setEmailStatus(res.ok ? "sent" : "failed");
+    setTimeout(() => setEmailStatus(null), 3000);
   }
 
   // Relative path only — deterministic on server and client, so it can't
@@ -236,12 +244,28 @@ export function ProposalEditor({
       {publicPath && (
         <div className="mb-6 flex items-center justify-between rounded-xl bg-accent-soft px-4 py-3 text-sm text-accent-hover">
           <span className="truncate font-medium">{publicPath}</span>
-          <button
-            onClick={() => copyPublicLink(publicPath)}
-            className="shrink-0 rounded-lg bg-white px-3 py-1.5 font-medium shadow-sm"
-          >
-            {copied ? "Copied!" : "Copy link"}
-          </button>
+          <div className="flex shrink-0 gap-2">
+            <button
+              onClick={() => copyPublicLink(publicPath)}
+              className="rounded-lg bg-white px-3 py-1.5 font-medium shadow-sm"
+            >
+              {copied ? "Copied!" : "Copy link"}
+            </button>
+            <button
+              onClick={emailClient}
+              disabled={!proposal.client_email || emailStatus === "sending"}
+              title={!proposal.client_email ? "No client email on file" : undefined}
+              className="rounded-lg bg-white px-3 py-1.5 font-medium shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {emailStatus === "sending"
+                ? "Sending…"
+                : emailStatus === "sent"
+                  ? "Sent!"
+                  : emailStatus === "failed"
+                    ? "Failed — retry"
+                    : "Email client"}
+            </button>
+          </div>
         </div>
       )}
 
