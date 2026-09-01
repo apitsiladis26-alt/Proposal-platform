@@ -17,7 +17,7 @@ export async function POST(
 
   const { data: proposal } = await admin
     .from("proposals")
-    .select("slug, client_name, client_email, price, currency")
+    .select("slug, client_name, client_email")
     .eq("id", id)
     .maybeSingle();
 
@@ -39,21 +39,16 @@ export async function POST(
 
   const companyName = profile?.company_name || "us";
   const url = `${process.env.NEXT_PUBLIC_SITE_URL}/p/${proposal.slug}`;
-  const amount = Number(proposal.price).toLocaleString(undefined, {
-    style: "currency",
-    currency: proposal.currency || "USD",
-  });
 
   const sent = await notifyClient(
     proposal.client_email,
     `Your proposal from ${companyName}`,
     `<div style="font-family: -apple-system, sans-serif; max-width: 480px; color: #1a1a1a;">
        <p>Hi ${proposal.client_name},</p>
-       <p>We're happy you're considering doing business with us. Please see your proposal below — you can review everything, sign, and pay directly from the page.</p>
-       <p style="color: #666;">Total: <strong style="color: #1a1a1a;">${amount}</strong></p>
+       <p>We're happy you're considering doing business with us. Please see your proposal below.</p>
        <p style="margin: 28px 0;">
          <a href="${url}" style="display: inline-block; background: #0f766e; color: #fff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600;">
-           View proposal &amp; sign
+           View proposal
          </a>
        </p>
      </div>`,
