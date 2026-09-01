@@ -28,7 +28,7 @@ for the full implementation plan.
 npm run dev
 ```
 
-Open [http://localhost:i havn3000](http://localhost:3000). Unauthenticated visits
+Open [http://localhost:3000](http://localhost:3000). Unauthenticated visits
 redirect to `/login`.
 
 ## Deployment (Netlify)
